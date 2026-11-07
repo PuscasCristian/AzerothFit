@@ -48,7 +48,6 @@ Dropped: weekly guild leaderboard (the owner: rankings would be lies).
 - Release zip with only the `AzerothFit/` folder (no tests, no tools), TOC limited to 16001 until
   regular Classic (11509) is tested.
 - Description with a health disclaimer, screenshots, an icon.
-- Push the repo somewhere (GitHub) so cloud sessions can see it; ask the owner first.
 
 ## Art polish (low priority)
 

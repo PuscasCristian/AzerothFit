@@ -4,6 +4,8 @@ A World of Warcraft **Forever** addon (client 1.60.x, interface 16001) that turn
 short home workouts: a snack per quest turn-in, a mini workout per level-up, a Trial of Strength
 every 10 levels, and a real-life fitness level 1-60. The owner designs it, plays it daily and
 gives feedback; read `ROADMAP.md` for what's done, what's next and why.
+Public repo: https://github.com/PuscasCristian/AzerothFit (branch main). Commits use the GitHub no-reply email;
+tests use made-up character names (Tamsin/Gideon Oakhart). Keep the owner's real character names out of the repo.
 
 ## Layout
 
