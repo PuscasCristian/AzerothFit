@@ -3,7 +3,8 @@
 A World of Warcraft **Forever** addon (client 1.60.x, interface 16001) that turns leveling into
 short home workouts: a snack per quest turn-in, a mini workout per level-up, a Trial of Strength
 every 10 levels, and a real-life fitness level 1-60. The owner designs it, plays it daily and
-gives feedback; read `ROADMAP.md` for what's done, what's next and why.
+gives feedback; read `ROADMAP.md` for what's done, what's next and why. Private working notes
+(publishing guide, working style) are kept outside this repo.
 Public repo: https://github.com/PuscasCristian/AzerothFit (branch main). Commits use the GitHub no-reply email;
 tests use made-up character names (Tamsin/Gideon Oakhart). Keep the owner's real character names out of the repo.
 
@@ -58,8 +59,10 @@ tests use made-up character names (Tamsin/Gideon Oakhart). Keep the owner's real
 - Players are mostly 30+: gentle defaults, easy steps down, stretching for low tiers, quiet mode.
 - Stop-if-it-hurts wording; never medical claims.
 
-## Working style
+## Branches and releases
 
-- The owner talks by voice-to-text; read for intent. Explain in plain words.
-- Ask before committing or pushing. Back up before risky edits (a careless script once
-  emptied `UI/Popup.lua`; never `open(p, 'w')` and read `p` in the same expression).
+- `main` = released versions only (what is on CurseForge). Each release is tagged (`v0.2.0`).
+- `dev` = day-to-day work. Merge `dev` into `main` when a version is ready, tag it, then run
+  `tools/package.sh` and upload the zip.
+- The repo is public: keep private notes out of it (they live in the owner's private notes).
+

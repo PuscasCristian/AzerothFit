@@ -42,7 +42,7 @@ Decisions and ideas from the owner's play-testing. Newest first within each sect
 
 Dropped: weekly guild leaderboard (the owner: rankings would be lies).
 
-## Before publishing on CurseForge (see docs/CURSEFORGE.md)
+## Before publishing on CurseForge
 
 - Test stats sharing with a real second player (only the echo of our own messages is verified).
 - Release zip with only the `AzerothFit/` folder (no tests, no tools), TOC limited to 16001 until
