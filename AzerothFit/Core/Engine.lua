@@ -356,6 +356,8 @@ end
 
 -- Record a finished set. Returns xp, restedBonus, levelsGained, weekGoalJustReached.
 function E.CompleteSet(db, set, day)
+	-- A session that runs past midnight: start the new day's counters first.
+	E.Rollover(db, day)
 	local st = db.stats
 	local key = set.cat .. ":" .. set.unit
 	st.totals[key] = (st.totals[key] or 0) + set.amount

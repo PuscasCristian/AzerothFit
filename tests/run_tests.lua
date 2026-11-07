@@ -2,6 +2,7 @@
 package.path = "./tests/?.lua;" .. package.path
 local M = require("wowmock")
 local AF = M.LoadAddon("AzerothFit", "AzerothFit")
+AF.Popup.CLICK_GUARD = 0 -- tests click faster than any human; the guard has its own test
 
 local passed, failed = 0, 0
 local function check(cond, label)

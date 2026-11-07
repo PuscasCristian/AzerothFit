@@ -116,6 +116,7 @@ local function BuildNudge()
 	nudge:SetSize(236, 50)
 	UI.Backdrop(nudge, C.bg, C.border)
 	nudge:SetFrameStrata("MEDIUM")
+	nudge:SetClampedToScreen(true) -- minimap moved to a screen edge by another addon
 	nudge:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	nudge:Hide()
 	local bar = UI.Tex(nudge, "ARTWORK", C.gold)

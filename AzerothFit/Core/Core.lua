@@ -87,6 +87,8 @@ function AF.Snooze(r)
 	local minutes = AF.db.settings.snooze or 5
 	r.snoozed = true
 	C_Timer.After(minutes * 60, function()
+		-- Paused in the meantime: an automatic one doesn't come back today.
+		if not r.manual and E.Paused(AF.db, AF.DayNumber()) then return end
 		Enqueue(r, true)
 	end)
 end
@@ -207,7 +209,8 @@ local function OnLevelUp(level)
 		return
 	end
 	if db.settings.saveForCampfire then
-		if #db.bank < 3 then db.bank[#db.bank + 1] = { level = level, day = AF.DayNumber() } end
+		if #db.bank >= 3 then return end -- three are already waiting
+		db.bank[#db.bank + 1] = { level = level, day = AF.DayNumber() }
 		AF.Nudge({
 			title = "Level " .. level .. "! Workout saved",
 			sub = #db.bank .. " saved for your next campfire",
@@ -223,6 +226,14 @@ local function OnLevelUp(level)
 		end
 		return
 	end
+	-- Two level-ups in a dungeon shouldn't mean two workouts back to back.
+	if HasQueued({ levelup = true }) then
+		if #db.bank < 3 then
+			db.bank[#db.bank + 1] = { level = level, day = AF.DayNumber() }
+			AF.Print("Level " .. level .. "! One workout is already waiting, so this one is saved for later.")
+		end
+		return
+	end
 	Enqueue({
 		kind = "levelup",
 		reason = "Level " .. level .. "! " .. Random(AF.Quips.levelup),
@@ -235,7 +246,9 @@ local function OnDeath()
 	db.stats.deaths = db.stats.deaths + 1
 	if not db.onboarded or not db.settings.trig.death then return end
 	DayCheck()
-	if Paused() or E.CapReached(db) or AF.Popup.IsBusy() or HasQueued({ death = true, snack = true }) then return end
+	-- Same spacing as quest snacks, so a wipe doesn't mean a set every minute.
+	if not E.CanSnack(db, time(), AF.DayNumber()) then return end
+	if AF.Popup.IsBusy() or HasQueued({ death = true, snack = true }) then return end
 	Enqueue({ kind = "death", reason = Random(AF.Quips.death), speakLead = "You died." }, false, 2)
 end
 
@@ -335,6 +348,10 @@ local function MoveCheck()
 	DayCheck()
 	if Paused() then return end
 	local now = time()
+	if UnitIsAFK and AF.Safe(UnitIsAFK("player")) then
+		lastMoveNudge = now -- away from the keyboard is away from the chair
+		return
+	end
 	local last = math.max(db.lastWorkoutEnd or 0, db.lastPrompt or 0, loginTime, lastMoveNudge)
 	if now - last < every * 60 then return end
 	lastMoveNudge = now
@@ -505,20 +522,25 @@ local function RegisterCharacter()
 	local name = AF.Safe(UnitName("player")) or key
 	local _, classFile = AF.Safe(UnitClass("player"))
 	local first = next(db.chars) == nil
-	-- Older versions wrote the name differently ("Name-Surname"): move that record over.
-	for oldKey, old in pairs(db.chars) do
-		if oldKey ~= key and (AF.Comm.Norm(oldKey) == AF.Comm.Norm(key) or old.name == name) then
-			local ch = db.chars[key] or {}
-			for k, v in pairs(old) do
-				if type(v) == "number" and type(ch[k]) == "number" and k ~= "level" and k ~= "seen" then
-					ch[k] = ch[k] + v
-				elseif ch[k] == nil then
-					ch[k] = v
-				end
+	-- Older versions wrote the name differently ("Name-Surname", or the first name alone):
+	-- move that record over. Two characters that only share a first name stay apart.
+	local norm, firstOnly = AF.Comm.Norm(key), AF.Comm.Norm(name)
+	local old = {}
+	for oldKey in pairs(db.chars) do
+		local n = AF.Comm.Norm(oldKey)
+		if oldKey ~= key and (n == norm or n == firstOnly) then old[#old + 1] = oldKey end
+	end
+	for _, oldKey in ipairs(old) do
+		local ch = db.chars[key] or {}
+		for k, v in pairs(db.chars[oldKey]) do
+			if type(v) == "number" and type(ch[k]) == "number" and k ~= "level" and k ~= "seen" then
+				ch[k] = ch[k] + v
+			elseif ch[k] == nil then
+				ch[k] = v
 			end
-			db.chars[key] = ch
-			db.chars[oldKey] = nil
 		end
+		db.chars[key] = ch
+		db.chars[oldKey] = nil
 	end
 	db.chars[key] = db.chars[key] or {}
 	local ch = db.chars[key]

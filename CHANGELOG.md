@@ -6,6 +6,17 @@
 - The workout card grows to fit long instructions instead of cutting them off.
 - Trial of Strength: the number box no longer covers "last time".
 - Long quest names in the card header end in "..." instead of overlapping.
+- A quick double-click on "Done" no longer finishes two sets, or answers "Too easy" by accident.
+- Trial of Strength: a number much bigger than last time (a typo like 120 for 12) asks you to confirm.
+- An automatic Trial no longer grabs the keyboard, so you can still move and chat.
+- Playing past midnight: the first set after midnight starts the new day's count.
+- Several level-ups in one dungeon give one workout; the rest are saved for later.
+- Dying several times in a row gives at most one death set per quest-snack gap.
+- A workout put off with "Later" stays away if you pause for the day.
+- Being AFK resets the stand-up reminder.
+- No more "No player named ... is currently playing" lines from stats sharing.
+- Two characters with the same first name keep separate records.
+- Long setting names wrap instead of running under the buttons; the minimap notice stays on screen.
 
 ## 0.2.0 (first public release)
 

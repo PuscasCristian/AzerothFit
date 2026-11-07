@@ -238,6 +238,8 @@ function UI.Stepper(parent, label, minV, maxV, step, get, set, fmt)
 	val:SetPoint("RIGHT", plus, "LEFT", -4, 0)
 	local minus = UI.Button(f, "-", 24, 22)
 	minus:SetPoint("RIGHT", val, "LEFT", -4, 0)
+	-- Long labels at big text sizes wrap instead of running under the buttons.
+	fs:SetPoint("RIGHT", minus, "LEFT", -6, 0)
 	function f:Refresh()
 		local v = get()
 		val:SetText(fmt and fmt(v) or tostring(v))

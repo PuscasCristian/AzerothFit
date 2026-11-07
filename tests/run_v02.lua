@@ -4,6 +4,7 @@
 package.path = "./tests/?.lua;" .. package.path
 local M = require("wowmock")
 local AF = M.LoadAddon("AzerothFit", "AzerothFit")
+AF.Popup.CLICK_GUARD = 0 -- tests click faster than any human; the guard has its own test
 local E = AF.Engine
 
 local passed, failed = 0, 0
@@ -61,7 +62,7 @@ check(#missing == 0, "every exercise has a picture (missing: " .. table.concat(m
 local before = popup().name:GetText()
 popup().swap:Click()
 check(popup().name:GetText() ~= before, "swap changes the exercise (" .. before .. " -> " .. popup().name:GetText() .. ")")
-check(popup().cat:GetText():find("wrist") or popup().cat:GetText():find("shoulder"), "swap says why it is kinder")
+check(popup().cue:GetText():find("wrist") or popup().cue:GetText():find("shoulder"), "swap says why it is kinder")
 finishSet()
 check(not popupShown(), "a swapped set doesn't ask how it felt (doesn't change your max)")
 check(db.ex.push.max == 12, "push max unchanged by a swap")
@@ -223,6 +224,98 @@ AF.WorkoutNow()
 M.Advance(1)
 check(popup():GetHeight() >= 330, "normal card keeps at least its normal height")
 popup().skip:Click()
+
+-- Review fixes ----------------------------------------------------------
+-- A double-click on Done finishes one set, not two
+db.settings.cats.cardio = true
+AF.Popup.CLICK_GUARD = 0.5
+db.lastPrompt, db.lastWorkoutEnd = 0, 0
+AF.WorkoutNow()
+M.Advance(1)
+local setsNow = db.stats.sets
+local timed = popup().done.label:GetText():find("Start")
+popup().done:Click()
+popup().done:Click()
+if timed then
+	check(popup().done.label:GetText():find("Finish") ~= nil, "double-click on Start doesn't stop the timer")
+else
+	check(db.stats.sets == setsNow + 1, "double-click on Done counts one set")
+end
+AF.Popup.CLICK_GUARD = 0
+M.Advance(1) -- let the guard from the last screen run out
+for _ = 1, 40 do
+	if not popupShown() then break end
+	if popup().easy:IsShown() then popup().right:Click() elseif popup().yes:IsShown() then popup().no:Click() else finishSet() end
+end
+check(not popupShown(), "workout closes after the double-click test")
+M.Advance(6 * 60)
+
+-- A session past midnight: the first set after midnight starts a new day
+db.today.day = AF.DayNumber() - 1
+db.today.sets = 9
+E.CompleteSet(db, { cat = "legs", unit = "reps", amount = 10, work = 30, variant = 3, id = "squat" }, AF.DayNumber())
+check(db.today.sets == 1 and db.today.day == AF.DayNumber(), "after midnight the day count starts again (" .. db.today.sets .. ")")
+
+-- Trial: a number much bigger than last time asks once more
+AF.StartTrial()
+M.Advance(1)
+local prev = db.ex[popup().input and "push"].max
+popup().input:SetText(tostring(prev * 10))
+popup().done:Click()
+check(db.ex.push.max == prev and popup().inputLabel:GetText():find("Save again"), "typo-sized trial number asks again")
+popup().done:Click()
+check(db.ex.push.max == prev * 10, "saving again keeps it")
+db.ex.push.max = prev
+popup().skip:Click()
+M.Advance(6 * 60)
+
+-- Two level-ups while in a dungeon: one workout waits, the second is saved
+db.lastPrompt, db.lastWorkoutEnd = 0, 0
+local bankBefore = #db.bank
+M.instance = true
+M.Fire("PLAYER_LEVEL_UP", 23)
+M.Fire("PLAYER_LEVEL_UP", 24)
+M.Advance(3)
+local waiting = 0
+for _, r in ipairs(AF.queue) do if r.kind == "levelup" then waiting = waiting + 1 end end
+check(waiting == 1 and #db.bank == bankBefore + 1, "second dungeon level-up is saved, not stacked (" .. waiting .. " waiting)")
+M.instance = false
+for i = #AF.queue, 1, -1 do table.remove(AF.queue, i) end
+db.bank = {}
+
+-- Dying again soon after a death set: no second set
+db.settings.trig.death = true
+db.lastPrompt, db.lastWorkoutEnd = 0, 0
+M.Fire("PLAYER_DEAD")
+M.Advance(3)
+check(popupShown() and popup().header:GetText():find("SPIRIT"), "death set")
+popup().skip:Click()
+M.Advance(6 * 60)
+M.Fire("PLAYER_DEAD")
+M.Advance(3)
+check(not popupShown(), "no second death set within the quest-snack gap")
+db.settings.trig.death = false
+
+-- Pausing after "Later": the snoozed workout doesn't come back today
+db.lastPrompt, db.lastWorkoutEnd = 0, 0
+M.Fire("QUEST_TURNED_IN", 9, 0, 0)
+M.Advance(3)
+check(popupShown(), "quest snack to snooze")
+popup().later:Click()
+AF.SetPaused(true)
+M.Advance(10 * 60)
+check(not popupShown(), "snoozed snack stays away after pausing")
+AF.SetPaused(false)
+
+-- "No player named X" after asking someone who logged off is hidden; other lines aren't
+_G.ERR_CHAT_PLAYER_NOT_FOUND_S = "No player named '%s' is currently playing."
+M.unitNames.mouseover = { "Gideon", "Oakhart" }
+M.Fire("UPDATE_MOUSEOVER_UNIT")
+check(AF.Comm.HideNotFound(nil, "CHAT_MSG_SYSTEM", "No player named 'Gideon Oakhart' is currently playing."),
+	"hides not-found for a player we just asked")
+check(not AF.Comm.HideNotFound(nil, "CHAT_MSG_SYSTEM", "No player named 'Someone Else' is currently playing."),
+	"keeps not-found for other players")
+M.unitNames.mouseover = nil
 
 print(string.format("\n%d passed, %d failed, %d runtime errors", passed, failed, #M.errors))
 if failed > 0 or #M.errors > 0 then os.exit(1) end

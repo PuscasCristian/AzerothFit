@@ -251,6 +251,27 @@ local function OnMouseover()
 	Send("Q", "WHISPER", key)
 end
 
+-- An addon whisper to someone who just logged off makes the game print
+-- "No player named X is currently playing." Hide that line for players we just asked.
+local function HideNotFound(_, _, msg)
+	msg = AF.Safe(msg)
+	if type(msg) ~= "string" or not ERR_CHAT_PLAYER_NOT_FOUND_S then return false end
+	local pattern = "^" .. ERR_CHAT_PLAYER_NOT_FOUND_S:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1"):gsub("%%%%s", "(.+)") .. "$"
+	local who = msg:match(pattern)
+	if not who then return false end
+	local now = Now()
+	for name, at in pairs(lastAsk) do
+		if now - at < 10 and Comm.Norm(name) == Comm.Norm(who) then return true end
+	end
+	return false
+end
+
+local function AddChatFilter()
+	local add = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
+	if add then pcall(add, "CHAT_MSG_SYSTEM", HideNotFound) end
+end
+Comm.HideNotFound = HideNotFound
+
 local function AddTooltipLines(tt, unit)
 	if not AF.db.settings.tooltip then return end
 	if not unit or AF.IsSecret(unit) then return end
@@ -357,6 +378,7 @@ function Comm.Init()
 	AF.On("UPDATE_MOUSEOVER_UNIT", OnMouseover)
 	AF.On("GROUP_JOINED", function() C_Timer.After(3, function() Comm.Broadcast(); Comm.RequestAll() end) end)
 	HookTooltip()
+	AddChatFilter()
 	AF.Listen("STATS_CHANGED", function() Comm.Broadcast() end)
 	-- Say hello a little after login, once the guild roster is ready.
 	C_Timer.After(12, function()

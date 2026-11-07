@@ -18,6 +18,16 @@ local phase -- "ready", "timing", "feedback", "suggest", "trial", "result"
 local timer = { left = 0, total = 0 }
 local suspended = false
 local closingQuietly = false
+-- Clicks right after the card changes are ignored, so a double-click on "Done" can't
+-- finish the next set too, or land on "Too easy" (it sits where "Done" was).
+Popup.CLICK_GUARD = 0.5
+local guardUntil = 0
+local function Guard()
+	guardUntil = GetTime() + Popup.CLICK_GUARD
+end
+local function Guarded()
+	return GetTime() < guardUntil
+end
 
 local HEADERS = {
 	snack = "QUEST COMPLETE",
@@ -107,6 +117,7 @@ local function Build()
 	f.cat = UI.Text(f, 11, C.dim)
 	f.cat:SetPoint("TOPLEFT", f.name, "BOTTOMLEFT", 0, -5)
 	f.cat:SetPoint("RIGHT", f.art, "LEFT", -10, 0)
+	if f.cat.SetWordWrap then f.cat:SetWordWrap(false) end
 	f.step = UI.Text(f, 11, C.dim)
 	f.step:SetPoint("TOPLEFT", 16, -114)
 
@@ -156,12 +167,12 @@ local function Build()
 	f.no = UI.Button(f, "Not yet", 208, 30)
 	f.no:SetPoint("LEFT", f.yes, "RIGHT", 8, 0)
 
-	f.done:SetScript("OnClick", function() Popup.Done() end)
+	f.done:SetScript("OnClick", function() if not Guarded() then Popup.Done() end end)
 	f.later:SetScript("OnClick", function() Popup.Later() end)
-	f.skip:SetScript("OnClick", function() Popup.Skip() end)
-	f.easy:SetScript("OnClick", function() Popup.Feedback("easy") end)
-	f.right:SetScript("OnClick", function() Popup.Feedback("right") end)
-	f.hard:SetScript("OnClick", function() Popup.Feedback("hard") end)
+	f.skip:SetScript("OnClick", function() if not Guarded() then Popup.Skip() end end)
+	f.easy:SetScript("OnClick", function() if not Guarded() then Popup.Feedback("easy") end end)
+	f.right:SetScript("OnClick", function() if not Guarded() then Popup.Feedback("right") end end)
+	f.hard:SetScript("OnClick", function() if not Guarded() then Popup.Feedback("hard") end end)
 	f.input:SetScript("OnEnterPressed", function() Popup.Done() end)
 
 	f:SetScript("OnHide", function()
@@ -267,7 +278,7 @@ local function Render()
 	f.name:SetText(step.name)
 	local detail
 	if step.swapped then
-		detail = step.why or "Swapped"
+		detail = "Swapped"
 	elseif step.quiet then
 		detail = "Quiet mode"
 	elseif step.stretch then
@@ -291,12 +302,17 @@ local function Render()
 			"Stop before your form breaks down.\n" .. step.cue)
 		f.input:SetText("")
 		f.input:Show()
+		f.inputLabel:SetText("Your number:")
 		f.inputLabel:Show()
+		req.confirm = nil
 		f.done:SetLabel("Save")
 		ShowButtons("main")
 		f.bar:SetProgress(req.idx - 1, #req.plan.steps)
 		Fit()
-		if f.input.SetFocus then f.input:SetFocus() end
+		Guard()
+		-- Only grab the keyboard when the player started the trial; an automatic one
+		-- (at level 10, 20...) must not stop them moving or typing in chat.
+		if req.manual and f.input.SetFocus then f.input:SetFocus() end
 		return
 	end
 
@@ -306,7 +322,7 @@ local function Render()
 	f.amount:SetText(tostring(step.amount))
 	PlaceUnit(false)
 	f.unit:SetText(UnitText(step))
-	f.cue:SetText(step.cue)
+	f.cue:SetText(step.swapped and step.why and (AF.Colorize(step.why .. ".", C.good) .. "  " .. step.cue) or step.cue)
 	if step.unit == "seconds" then
 		f.done:SetLabel("Start  (" .. step.amount .. "s)")
 	else
@@ -317,6 +333,7 @@ local function Render()
 	ShowButtons("main")
 	f.bar:SetProgress(req.idx - 1, #req.plan.steps)
 	Fit()
+	Guard()
 end
 
 function Popup.IsBusy()
@@ -412,6 +429,7 @@ local function Finish()
 	f.bar:SetProgress(1, 1)
 	ShowButtons("feedback")
 	Fit()
+	Guard()
 	AF.Speak("Done! How did that feel?")
 end
 
@@ -451,7 +469,18 @@ function Popup.Done()
 			f.inputLabel:SetText(AF.Colorize("Type a number first:", C.bad))
 			return
 		end
+		value = math.floor(value)
+		-- A typo (120 instead of 12) would make every set ten times harder: ask once.
+		local prev = step.previous or 0
+		if value > math.max(prev * 2, prev + 15) and req.confirm ~= value then
+			req.confirm = value
+			f.inputLabel:SetText(AF.Colorize("Much more than last time. Save again?", C.gold))
+			if f.input.ClearFocus then f.input:ClearFocus() end
+			return
+		end
+		req.confirm = nil
 		f.inputLabel:SetText("Your number:")
+		if f.input.ClearFocus then f.input:ClearFocus() end
 		local day = AF.DayNumber()
 		local old, new = E.SetTrialMax(AF.db, step.cat, value, day)
 		req.results = req.results or {}
@@ -472,6 +501,7 @@ function Popup.Done()
 		timer.total = step.amount
 		timer.left = step.amount
 		f.done:SetLabel("Finish")
+		Guard() -- a double-click on Start shouldn't end the timer at once
 		f.later:Hide()
 		f.skip:Hide()
 		f.swap:Hide()
@@ -508,9 +538,10 @@ function Popup.ShowTrialResults()
 	Fit()
 	f.yes:SetLabel("Great")
 	f.no:SetLabel("Open stats")
-	f.yes:SetScript("OnClick", function() CloseQuietly() end)
-	f.no:SetScript("OnClick", function() CloseQuietly(); AF.MainWindow.Show("profile") end)
+	f.yes:SetScript("OnClick", function() if not Guarded() then CloseQuietly() end end)
+	f.no:SetScript("OnClick", function() if not Guarded() then CloseQuietly(); AF.MainWindow.Show("profile") end end)
 	ShowButtons("suggest")
+	Guard()
 	AF.Speak("Trial complete. Well done.")
 end
 
@@ -542,13 +573,15 @@ local function Suggest(cat, kind)
 	f.name:SetText(target.name)
 	f.cat:SetText("")
 	f.yes:SetScript("OnClick", function()
+		if Guarded() then return end
 		E.ChangeVariant(db, cat, kind == "promote" and 1 or -1, AF.DayNumber())
 		AF.Print(AF.CategoryInfo[cat].name .. " exercise is now " .. AF.Colorize(target.name, C.gold) .. ".")
 		AF.Fire("STATS_CHANGED")
 		Popup.NextSuggestion()
 	end)
-	f.no:SetScript("OnClick", function() Popup.NextSuggestion() end)
+	f.no:SetScript("OnClick", function() if not Guarded() then Popup.NextSuggestion() end end)
 	ShowButtons("suggest")
+	Guard()
 end
 
 function Popup.NextSuggestion()
