@@ -25,3 +25,7 @@ and other players with the addon can see your level and totals in your tooltip.
     /af trial           Trial of Strength
     /af preview levelup preview a popup (also quest, death, trial)
     /flex               post your stats to guild/party/say
+
+## License
+
+MIT, see `LICENSE`. Made by Cristian.
