@@ -24,7 +24,9 @@ and other players with the addon can see your level and totals in your tooltip.
     /af now             a quick set right now
     /af trial           Trial of Strength
     /af preview levelup preview a popup (also quest, death, trial)
-    /flex               post your stats to guild/party/say
+    /flex               show your stats to yourself (/flex guild, party or say to post them)
+    /af stretch         a short stretch break
+    /af pause           pause for today (right-click the minimap button for more)
 
 ## License
 
