@@ -203,5 +203,26 @@ AF.MainWindow.Show("pacing")
 local stepper = AF.MainWindow.pages.pacing.steppers[1]
 check(stepper ~= nil, "pacing steppers exist")
 
+-- Separate text size and window size
+db.settings.scale = 1.0
+db.settings.textScale = 1.2
+AF.ApplyScale()
+check(popup().cue.__fontSize == 14, "text size 120% makes 12pt text 14pt (got " .. tostring(popup().cue.__fontSize) .. ")")
+check(popup().amount.__fontSize == 67, "big number scales too")
+db.settings.textScale = 1.0
+AF.ApplyScale()
+check(popup().cue.__fontSize == 12, "back to normal text size")
+
+-- The card grows to fit long how-to text (the Trial text was cut off)
+AF.StartTrial()
+M.Advance(1)
+check(popupShown() and popup().header:GetText():find("TRIAL"), "trial shown")
+check(popup():GetHeight() > 330, "trial card is taller than the default to fit its text (" .. popup():GetHeight() .. ")")
+popup().skip:Click()
+AF.WorkoutNow()
+M.Advance(1)
+check(popup():GetHeight() >= 330, "normal card keeps at least its normal height")
+popup().skip:Click()
+
 print(string.format("\n%d passed, %d failed, %d runtime errors", passed, failed, #M.errors))
 if failed > 0 or #M.errors > 0 then os.exit(1) end

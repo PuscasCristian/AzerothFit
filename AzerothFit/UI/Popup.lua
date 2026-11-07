@@ -70,6 +70,7 @@ local function Build()
 	f.quip = UI.Text(f, 13, C.text)
 	f.quip:SetPoint("TOPLEFT", 16, -32)
 	f.quip:SetPoint("RIGHT", -16, 0)
+	if f.quip.SetWordWrap then f.quip:SetWordWrap(false) end -- one line; long quest names end in "..."
 
 	local div = UI.Tex(f, "ARTWORK", C.borderSoft)
 	div:SetHeight(1)
@@ -115,7 +116,7 @@ local function Build()
 	f.unit:SetPoint("BOTTOMLEFT", f.amount, "BOTTOMRIGHT", 8, 10)
 
 	f.input = UI.NumberBox(f, 90)
-	f.input:SetPoint("TOPLEFT", 150, -150)
+	f.input:SetPoint("LEFT", f.amount, "RIGHT", 28, -4)
 	f.input:Hide()
 	f.inputLabel = UI.Text(f, 11, C.dim)
 	f.inputLabel:SetPoint("BOTTOMLEFT", f.input, "TOPLEFT", 0, 4)
@@ -124,7 +125,7 @@ local function Build()
 
 	f.cue = UI.Text(f, 12, C.dim)
 	f.cue:SetPoint("TOPLEFT", 16, -222)
-	f.cue:SetPoint("RIGHT", -16, 0)
+	f.cue:SetWidth(W - 32)
 	f.cue:SetSpacing(2)
 
 	f.bar = UI.Bar(f, W - 32, 6, C.gold)
@@ -189,6 +190,26 @@ local function Restore()
 		f:SetPoint(p.point, UIParent, p.rel or p.point, p.x or 0, p.y or 0)
 	else
 		f:SetPoint("CENTER", UIParent, "CENTER", 0, 140)
+	end
+end
+
+-- Grow the card to fit the how-to text (longer texts and bigger text sizes never get cut off).
+local function Fit()
+	local ts = AF.db.settings.textScale or 1
+	local top = 222 + math.max(0, ts - 1) * 70
+	f.cue:ClearAllPoints()
+	f.cue:SetPoint("TOPLEFT", 16, -top)
+	local h = top + (f.cue:GetStringHeight() or 0) + 78
+	f:SetHeight(math.max(H, math.floor(h + 0.5)))
+end
+
+-- The unit label sits beside the big number, or under it when the number box needs that space.
+local function PlaceUnit(below)
+	f.unit:ClearAllPoints()
+	if below then
+		f.unit:SetPoint("TOPLEFT", f.amount, "BOTTOMLEFT", 2, 0)
+	else
+		f.unit:SetPoint("BOTTOMLEFT", f.amount, "BOTTOMRIGHT", 8, 10)
 	end
 end
 
@@ -264,7 +285,8 @@ local function Render()
 		phase = "trial"
 		f.swap:Hide()
 		f.amount:SetText(tostring(step.previous))
-		f.unit:SetText(step.unit == "seconds" and "SEC LAST TIME" or "LAST TIME")
+		PlaceUnit(true)
+		f.unit:SetText(step.unit == "seconds" and "SECONDS LAST TIME" or "LAST TIME")
 		f.cue:SetText("Do as many " .. step.name .. " as you can with good form, then type your number. " ..
 			"Stop before your form breaks down.\n" .. step.cue)
 		f.input:SetText("")
@@ -273,6 +295,7 @@ local function Render()
 		f.done:SetLabel("Save")
 		ShowButtons("main")
 		f.bar:SetProgress(req.idx - 1, #req.plan.steps)
+		Fit()
 		if f.input.SetFocus then f.input:SetFocus() end
 		return
 	end
@@ -281,6 +304,7 @@ local function Render()
 	f.inputLabel:Hide()
 	phase = "ready"
 	f.amount:SetText(tostring(step.amount))
+	PlaceUnit(false)
 	f.unit:SetText(UnitText(step))
 	f.cue:SetText(step.cue)
 	if step.unit == "seconds" then
@@ -292,6 +316,7 @@ local function Render()
 	f.swap:SetLabel(step.stretch and "Another" or "Swap")
 	ShowButtons("main")
 	f.bar:SetProgress(req.idx - 1, #req.plan.steps)
+	Fit()
 end
 
 function Popup.IsBusy()
@@ -386,6 +411,7 @@ local function Finish()
 		"Every few \"just right\" answers add one rep, so you keep getting stronger.")
 	f.bar:SetProgress(1, 1)
 	ShowButtons("feedback")
+	Fit()
 	AF.Speak("Done! How did that feel?")
 end
 
@@ -479,6 +505,7 @@ function Popup.ShowTrialResults()
 	f.unit:SetText("")
 	f.quip:SetText("Trial complete. Your workouts now use these numbers.")
 	f.cue:SetText(table.concat(lines, "\n"))
+	Fit()
 	f.yes:SetLabel("Great")
 	f.no:SetLabel("Open stats")
 	f.yes:SetScript("OnClick", function() CloseQuietly() end)
@@ -510,6 +537,7 @@ local function Suggest(cat, kind)
 		f.yes:SetLabel("Switch")
 	end
 	f.no:SetLabel(kind == "promote" and "Not yet" or "Keep this one")
+	Fit()
 	f.icon:SetIcon(AF.CategoryInfo[cat].icon)
 	f.name:SetText(target.name)
 	f.cat:SetText("")

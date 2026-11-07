@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Separate "Text size" and "Window size" settings (Options tab).
+- The workout card grows to fit long instructions instead of cutting them off.
+- Trial of Strength: the number box no longer covers "last time".
+- Long quest names in the card header end in "..." instead of overlapping.
+
 ## 0.2.0 (first public release)
 
 - Quest turn-ins give a short exercise snack, level-ups a mini workout, and every 10 levels a

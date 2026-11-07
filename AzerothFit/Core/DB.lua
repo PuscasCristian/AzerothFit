@@ -11,7 +11,8 @@ AF.DEFAULTS = {
 		-- capSets and rounds are nil = use the tier's numbers
 		weekGoal = 3, -- training days a week
 		quiet = false, -- no jumping
-		scale = 1.0, -- text and window size
+		scale = 1.0, -- window size
+		textScale = 1.0, -- text size
 		trig = { quest = true, level = true, death = false },
 		cats = { push = true, legs = true, core = true, cardio = true, stretch = true },
 		voice = true,

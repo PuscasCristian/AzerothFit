@@ -48,6 +48,9 @@ function Methods:SetSize(w, h) self.__w, self.__h = w, h end
 function Methods:SetWidth(w) self.__w = w end
 function Methods:SetHeight(h) self.__h = h end
 function Methods:GetWidth() return self.__w end
+function Methods:SetFont(_, size) self.__fontSize = size end
+-- Rough text height: ~60 characters per line of 14 pixels.
+function Methods:GetStringHeight() return math.ceil(#(self.__text or "") / 60) * 14 end
 function Methods:GetHeight() return self.__h end
 function Methods:IsEnabled() return self.__enabled end
 function Methods:SetEnabled(v)

@@ -40,9 +40,27 @@ function UI.Tex(parent, layer, color, sub)
 	return t
 end
 
+-- Every text we create is remembered, so the "Text size" setting can resize them all.
+UI.fonts = setmetatable({}, { __mode = "k" })
+
+local function TextScale()
+	return (AF.db and AF.db.settings.textScale) or 1
+end
+
+local function ScaledSize(size)
+	return math.max(7, math.floor(size * TextScale() + 0.5))
+end
+
+function UI.ApplyTextScale()
+	for fs, info in pairs(UI.fonts) do
+		fs:SetFont(FONT, ScaledSize(info.size), info.flags)
+	end
+end
+
 function UI.Text(parent, size, color, flags, justify)
 	local fs = parent:CreateFontString(nil, "OVERLAY")
-	fs:SetFont(FONT, size or 12, flags or "")
+	UI.fonts[fs] = { size = size or 12, flags = flags or "" }
+	fs:SetFont(FONT, ScaledSize(size or 12), flags or "")
 	local c = color or C.text
 	fs:SetTextColor(c[1], c[2], c[3], c[4] or 1)
 	fs:SetJustifyH(justify or "LEFT")
@@ -305,7 +323,8 @@ function UI.NumberBox(parent, w)
 	local e = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
 	e:SetSize(w or 80, 30)
 	UI.Backdrop(e, { 0.03, 0.03, 0.04, 1 }, C.gold)
-	e:SetFont(FONT, 18, "")
+	UI.fonts[e] = { size = 18, flags = "" }
+	e:SetFont(FONT, ScaledSize(18), "")
 	e:SetTextColor(1, 1, 1)
 	e:SetJustifyH("CENTER")
 	e:SetAutoFocus(false)

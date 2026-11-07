@@ -453,19 +453,26 @@ local function BuildOptions(p)
 			function(v) AF.db.settings.minimap.hide = not v; AF.Fire("SETTINGS_CHANGED") end) },
 	})
 
-	SectionLabel(p, "LOOK", 308, -200)
-	p.scale = UI.Stepper(p, "Text and window size", 80, 150, 10,
+	SectionLabel(p, "LOOK", 308, -186)
+	p.textScale = UI.Stepper(p, "Text size", 80, 130, 10,
+		function() return math.floor((AF.db.settings.textScale or 1) * 100 + 0.5) end,
+		function(v) AF.db.settings.textScale = v / 100; AF.ApplyScale() end,
+		function(v) return v .. "%" end)
+	p.textScale:SetSize(276, 24)
+	p.textScale:SetPoint("TOPLEFT", 308, -204)
+	p.textScale.tip = "Only the letters. Windows keep their size."
+	p.scale = UI.Stepper(p, "Window size", 80, 150, 10,
 		function() return math.floor((AF.db.settings.scale or 1) * 100 + 0.5) end,
 		function(v) AF.db.settings.scale = v / 100; AF.ApplyScale() end,
 		function(v) return v .. "%" end)
 	p.scale:SetSize(276, 24)
-	p.scale:SetPoint("TOPLEFT", 308, -218)
+	p.scale:SetPoint("TOPLEFT", 308, -234)
 
 	local flexLabel = UI.Text(p, 12, C.text)
-	flexLabel:SetPoint("TOPLEFT", 308, -254)
+	flexLabel:SetPoint("TOPLEFT", 308, -276)
 	flexLabel:SetText("/flex shows my stats to")
 	p.flexBtn = UI.Button(p, "", 110, 22)
-	p.flexBtn:SetPoint("TOPRIGHT", -16, -250)
+	p.flexBtn:SetPoint("TOPRIGHT", -16, -272)
 	p.flexBtn.tip = "Where plain /flex goes. You can always pick another place: /flex me, /flex guild, /flex party, /flex say."
 	p.flexBtn:SetScript("OnClick", function(self)
 		UI.ChoiceMenu(self, AF.FlexTargets, function(key)
@@ -487,6 +494,7 @@ end
 local function RefreshOptions(p)
 	for _, c in ipairs(p.checks) do c:Refresh() end
 	p.scale:Refresh()
+	p.textScale:Refresh()
 	p.flexBtn:SetLabel(AF.FlexLabel(AF.db.settings.flexTo))
 end
 
@@ -709,8 +717,9 @@ function MW.ApplyScale()
 	if f then f:SetScale(AF.db.settings.scale or 1) end
 end
 
--- Text and window size, for every Azeroth Fit frame.
+-- Text size and window size, for every Azeroth Fit frame.
 function AF.ApplyScale()
+	UI.ApplyTextScale()
 	MW.ApplyScale()
 	if AF.Popup.ApplyScale then AF.Popup.ApplyScale() end
 	AF.Fire("SETTINGS_CHANGED")
