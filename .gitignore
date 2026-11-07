@@ -1,3 +1,4 @@
 tools/art/preview/
 *.bak
 __pycache__/
+dist/

@@ -1,10 +1,13 @@
-## Interface: 16001, 11509
+## Interface: 16001
+## AllowLoadGameType: camelot
 ## Title: Azeroth Fit
 ## Notes: Level up in real life while you level in Azeroth. Short home workouts on quests and level-ups, a real-life fitness level, and stats other players can see.
 ## Author: Cristian
 ## Version: 0.2.0
 ## SavedVariables: AzerothFitDB
-## IconTexture: Interface\Icons\Ability_Warrior_Revenge
+## IconTexture: Interface\AddOns\AzerothFit\Media\icon
+## X-License: MIT
+## X-Website: https://github.com/PuscasCristian/AzerothFit
 
 Core\Util.lua
 Data\Exercises.lua
