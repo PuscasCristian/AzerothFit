@@ -1,0 +1,21 @@
+## Interface: 16001, 11509
+## Title: Azeroth Fit
+## Notes: Level up in real life while you level in Azeroth. Short home workouts on quests and level-ups, a real-life fitness level, and stats other players can see.
+## Author: Lork
+## Version: 0.2.0
+## SavedVariables: AzerothFitDB
+## IconTexture: Interface\Icons\Ability_Warrior_Revenge
+
+Core\Util.lua
+Data\Exercises.lua
+Data\Art.lua
+Core\Engine.lua
+Core\DB.lua
+UI\Widgets.lua
+UI\Toast.lua
+UI\Popup.lua
+UI\Onboarding.lua
+UI\MainWindow.lua
+UI\Minimap.lua
+Social\Comm.lua
+Core\Core.lua

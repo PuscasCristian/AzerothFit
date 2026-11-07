@@ -1,0 +1,3 @@
+tools/art/preview/
+*.bak
+__pycache__/
